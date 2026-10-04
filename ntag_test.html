@@ -1,1 +1,43 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ムシバトキンダム NTAGテスト</title><style>body{margin:0;background:#101827;color:#fff;font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh}.card{width:min(92vw,700px);background:#1e293b;padding:28px;border-radius:22px;text-align:center}h1{margin:0 0 8px}p{color:#cbd5e1}button{width:100%;padding:16px;border:0;border-radius:14px;background:#eab308;font-size:22px;font-weight:900}#status{margin-top:18px;padding:16px;background:#0f172a;border-radius:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.box{background:#334155;padding:14px;border-radius:12px;text-align:left}.label{font-size:13px;color:#cbd5e1}.value{font-size:21px;font-weight:900;word-break:break-all}.note{margin-top:18px;font-size:13px;color:#94a3b8;line-height:1.7}</style></head><body><div class="card"><h1>🪲 NTAG召喚テスト</h1><p>NTAG215をスマホにかざして読み取ります</p><button id="scan">📱 NTAGを読み取る</button><div id="status">準備完了</div><div class="grid"><div class="box"><div class="label">シリアル番号</div><div id="serial" class="value">---</div></div><div class="box"><div class="label">NDEFレコード</div><div id="ndef" class="value">---</div></div><div class="box"><div class="label">個体値テスト</div><div id="iv" class="value">---</div></div><div class="box"><div class="label">個体ランク</div><div id="rank" class="value">---</div></div></div><div class="note">Android版ChromeのWeb NFC対応環境を想定。<br>まず「タグを検出できるか」「シリアル番号が取得できるか」を確認します。</div></div><script>const $=id=>document.getElementById(id);function rank(v){if(v<50)return['並','+'+Math.floor(v/10)+'%'];if(v<75)return['優','+'+(5+Math.floor((v-50)/5))+'%'];if(v<90)return['秀','+'+(10+Math.floor((v-75)/3))+'%'];if(v<95)return['天賦','+17%'];return['極','+20%']}$("scan").onclick=async()=>{$("status").textContent='NTAGをスマホの背面にかざしてください…';if(!('NDEF'in window)){$("status").textContent='Web NFC非対応です。Android版Chromeで試してください。';return}try{const ndef=new NDEFReader();ndef.onreadingerror=()=>$("status").textContent='読み取り失敗。もう一度かざしてください。';ndef.onreading=event=>{const s=event.serialNumber||'';$("serial").textContent=s||'取得できず';const rec=[];for(const r of event.message.records){try{if(r.recordType==='text'){const dec=new TextDecoder(r.encoding||'utf-8');rec.push(dec.decode(r.data))}else if(r.recordType==='url'){rec.push(new TextDecoder().decode(r.data))}else rec.push(r.recordType)}catch(e){rec.push(r.recordType)}}$("ndef").textContent=rec.join(' / ')||'なし';if(s){const hex=s.replace(/[^0-9a-f]/gi,'');const v=parseInt(hex.slice(-2),16)%100;const [rr,b]=rank(v);$("iv").textContent=String(v).padStart(2,'0')+' ('+b+')';$("rank").textContent=rr;$("status").textContent='✅ 読み取り成功'}else $("status").textContent='タグは検出しましたがシリアル番号を取得できませんでした'};await ndef.scan()}catch(e){$("status").textContent='開始できません: '+(e.message||e)}};</script></body></html>
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ムシバトキンダム NTAG診断</title>
+<style>body{margin:0;background:#0b1220;color:#fff;font-family:system-ui,sans-serif}.wrap{max-width:760px;margin:auto;padding:20px}.card{background:#172033;border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 8px 30px #0005}h1{margin:0 0 8px;font-size:26px}p{color:#cbd5e1;line-height:1.6}button{width:100%;padding:16px;border:0;border-radius:14px;background:#eab308;color:#111827;font-size:21px;font-weight:900}table{width:100%;border-collapse:collapse}td{padding:11px 6px;border-bottom:1px solid #334155;vertical-align:top}td:first-child{color:#94a3b8;width:42%}.ok{color:#86efac;font-weight:900}.ng{color:#fca5a5;font-weight:900}.val{word-break:break-all;font-weight:800}.log{white-space:pre-wrap;word-break:break-word;background:#0f172a;padding:14px;border-radius:12px;min-height:80px}.small{font-size:13px;color:#94a3b8}</style></head>
+<body><div class="wrap">
+<div class="card"><h1>🪲 NTAG Web NFC 診断</h1><p>まず「NFCを診断・読み取り」を押してください。ブラウザ、HTTPS、Web NFC API、NDEF読み取りの状態を確認します。</p><button id="scan">📱 NFCを診断・読み取り</button></div>
+<div class="card"><table>
+<tr><td>ブラウザ</td><td id="browser" class="val">---</td></tr>
+<tr><td>OS</td><td id="os" class="val">---</td></tr>
+<tr><td>HTTPS</td><td id="https" class="val">---</td></tr>
+<tr><td>Web NFC API</td><td id="api" class="val">---</td></tr>
+<tr><td>NDEFReader</td><td id="ndefreader" class="val">---</td></tr>
+<tr><td>NFC許可状態</td><td id="perm" class="val">---</td></tr>
+<tr><td>画面URL</td><td id="url" class="val">---</td></tr>
+</table></div>
+<div class="card"><h2>読み取り結果</h2><table>
+<tr><td>シリアル番号</td><td id="serial" class="val">---</td></tr>
+<tr><td>NDEF</td><td id="records" class="val">---</td></tr>
+<tr><td>個体値</td><td id="iv" class="val">---</td></tr>
+<tr><td>個体ランク</td><td id="rank" class="val">---</td></tr>
+</table></div>
+<div class="card"><h2>診断ログ</h2><div id="log" class="log">準備完了</div><p class="small">※ Web NFCはAndroid Chrome等でも端末・ブラウザの条件により利用できない場合があります。</p></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function yes(v){return '<span class="ok">'+v+'</span>'}function no(v){return '<span class="ng">'+v+'</span>'}
+function rank(v){if(v<50)return ['並','+'+Math.floor(v/10)+'%'];if(v<75)return ['優','+'+(5+Math.floor((v-50)/5))+'%'];if(v<90)return ['秀','+'+(10+Math.floor((v-75)/3))+'%'];if(v<95)return ['天賦','+17%'];return ['極','+20%']}
+function detectBrowser(){const ua=navigator.userAgent;let b='不明';if(/Edg\//.test(ua))b='Microsoft Edge';else if(/Chrome\//.test(ua)&&!/Edg\//.test(ua))b='Google Chrome';else if(/Firefox\//.test(ua))b='Firefox';else if(/Safari\//.test(ua)&&!/Chrome\//.test(ua))b='Safari';return b}
+function detectOS(){const ua=navigator.userAgent;if(/Android/i.test(ua))return 'Android';if(/iPhone|iPad|iPod/i.test(ua))return 'iOS';return navigator.platform||'不明'}
+$('browser').textContent=detectBrowser();$('os').textContent=detectOS();$('https').innerHTML=location.protocol==='https:'?yes('OK（HTTPS）'):no('NG（'+location.protocol+'）');$('api').innerHTML='NDEFReader' in window?yes('利用可能'):no('利用不可');$('ndefreader').innerHTML=typeof NDEFReader==='function'?yes('利用可能'):no('利用不可');$('url').textContent=location.href;
+async function permission(){if(!navigator.permissions||!navigator.permissions.query)return '確認不可';try{const p=await navigator.permissions.query({name:'nfc'});return p.state}catch(e){return '確認不可: '+e.message}}
+$('scan').onclick=async()=>{ $('log').textContent='診断開始…';
+ const api='NDEFReader' in window; $('api').innerHTML=api?yes('利用可能'):no('利用不可'); $('ndefreader').innerHTML=typeof NDEFReader==='function'?yes('利用可能'):no('利用不可');
+ if(location.protocol!=='https:'){ $('log').textContent+='\nHTTPSではありません。GitHub PagesのURLを開いてください。'; return; }
+ if(!api){ $('log').textContent+='\nNDEFReader がありません。Android Chrome/対応端末/ブラウザ設定を確認してください。'; return; }
+ const ps=await permission(); $('perm').textContent=ps;
+ try{
+  const ndef=new NDEFReader(); $('log').textContent+='\nNDEFReader作成OK';
+  ndef.onreadingerror=()=>{$('log').textContent+='\n❌ タグを検出しましたが読み取りエラーです。';};
+  ndef.onreading=event=>{ $('log').textContent+='\n✅ タグ検出・読み取りイベント発生'; const s=event.serialNumber||''; $('serial').textContent=s||'取得できず'; const out=[]; for(const r of event.message.records){try{if(r.recordType==='text'){out.push(new TextDecoder(r.encoding||'utf-8').decode(r.data))}else if(r.recordType==='url'){out.push(new TextDecoder().decode(r.data))}else out.push(r.recordType)}catch(e){out.push(r.recordType)}} $('records').textContent=out.join(' / ')||'なし'; if(s){const hex=s.replace(/[^0-9a-f]/gi,'');const v=parseInt(hex.slice(-2),16)%100;const rb=rank(v);$('iv').textContent=String(v).padStart(2,'0')+' ('+rb[1]+')';$('rank').textContent=rb[0];} };
+  await ndef.scan(); $('log').textContent+='\n📡 スキャン開始。NTAG215をスマホ背面にかざしてください。';
+ }catch(e){$('log').textContent+='\n❌ 開始エラー: '+(e.name||'')+' / '+(e.message||e);}
+};
+</script></body></html>
